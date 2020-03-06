@@ -247,7 +247,7 @@ colours.helper <- function(x){
     theme(legend.position="bottom") +
     scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
     scale_fill_manual(values=colours.helper(c("one", "two"))) +
-    labs(y = "£ per farm)", x = "") 
+    labs(y = "£ per farm", x = "") 
   )%>%
   ggplotly(tooltip = c("group","y","x"),
            layout(legend = list(orientation = "h")
@@ -274,11 +274,7 @@ process_FBSobject <- function(obj){
               groups = groups))
 }
 
-table1 %>%
-  process_FBSobject() %>%
-  tibble(factor = .$groups,
-         y = .$means
-           CI = )
+
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

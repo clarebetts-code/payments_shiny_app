@@ -15,15 +15,15 @@ pacman::p_load(dplyr,
                FBSCore,
                tibble,
                shiny,
+               #akima,
                shinycssloaders,
                plotly,
-               ggplot2,
-               shinythemes)
+               ggplot2)
 
 
 
 # read in support functions
-source("Payments_reductions_support_functions.R")
+source("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Payments reduction app for git\\R\\Payments_reductions_support_functions.R")
 
 load(file = "K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Data\\shiny.app.data.Rdata")
 
@@ -32,7 +32,6 @@ load(file = "K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\
 # Define UI for application
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ui <- fluidPage(
-  theme = shinytheme("flatly"),
   # Application title
   titlePanel("Farm Business Income Direct Payment reductions"),
   # Sidebar with a slider input for number of bins 
@@ -90,10 +89,10 @@ ui <- fluidPage(
       
       mainPanel(
         tabsetPanel(type = "tabs",
-                    tabPanel("Next...", 
-                             spinner(
-                               plotlyOutput("plot1"))),
-                    tabPanel("Payment \nloss", spinner(DT::dataTableOutput("table_1"))),
+                    tabPanel("Next..."),
+                    tabPanel("Payment \nimpact", 
+                             spinner(plotlyOutput("plot1")),
+                      spinner(DT::dataTableOutput("table_1"))),
                     tabPanel("FBI impact", spinner(DT::dataTableOutput("table_2")))
                     
                     )
@@ -117,7 +116,7 @@ server <- function(input, output) {
   
   # function to simplify the code to calculate the means
   mean_byfac_new <- function(vars, factor = input$fbsfac, design = fbsdesign()){
-    FBSCore::total_byfac(vars, factor, design)
+    FBSCore::mean_byfac(vars, factor, design)
   }
   
   
@@ -312,23 +311,23 @@ server <- function(input, output) {
       mutate('proportional loss of DP' = scales::percent((loss / dp_3yr), accuracy = 1)) 
     
     # this doesn't work in shiny but would be clearer to read:
-    # mean_byfac_new(c("loss", "dp_3yr"))  %>%
-      # tibble(fbsfac = .$type,
-      #        Average_payment_loss = .$loss,
-      #        CI_average_payment_loss = .$CI.loss,
-      #        sample_payment_loss = c(mosaic::sum(fbsloss$num_affected ~ fbsloss$type), sum(fbsloss$num_affected)),
-      #        Average_original_payment = .$dp_3yr,
-      #        CI_average_original_payment = .$CI.dp_3yr
-      # ) %>%
-      # select(fbsfac,
-      #        Average_payment_loss,
-      #        CI_average_payment_loss,
-      #        sample_payment_loss,
-      #        Average_original_payment,
-      #        CI_average_original_payment) %>%
-      # mutate(proportional_loss = scales::percent((Average_payment_loss / Average_original_payment), accuracy = 1),
-      #        CI_average_payment_loss = CI_average_payment_loss * -1,
-      #        CI_average_original_payment = CI_average_original_payment * -1)
+    mean_byfac_new(c("loss", "dp_3yr"))  %>% {
+      tibble(fbsfac = .[[1]],
+             Average_payment_loss = .[[2]],
+             CI_average_payment_loss = .[[7]],
+             sample_payment_loss = c(mosaic::sum(Loss_fbs()$num_affected ~ (Loss_fbs())[,input$fbsfac], sum(Loss_fbs()$num_affected))),
+             Average_original_payment = .[[3]],
+             CI_average_original_payment = .[[8]]
+      )} %>%
+      select(fbsfac,
+             Average_payment_loss,
+             CI_average_payment_loss,
+             sample_payment_loss,
+             Average_original_payment,
+             CI_average_original_payment) %>%
+      mutate(proportional_loss = scales::percent((Average_payment_loss / Average_original_payment), accuracy = 1),
+             CI_average_payment_loss = CI_average_payment_loss * -1,
+             CI_average_original_payment = CI_average_original_payment * -1)
     
     })
   
@@ -359,7 +358,9 @@ server <- function(input, output) {
          geom_errorbar(aes(ymin = y-CI, ymax = y+CI), position = "dodge", stat="identity") +
          scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
          scale_fill_manual(values=colours.helper(c("one", "two"))) +
-         labs(y = "£ per farm)", x = "") 
+         labs(y = "£ per farm", x = "", title = "Average payment and loss of payment per farm") +
+         theme_minimal() +                                                    # white background, grey lines
+         theme(panel.grid.minor = element_blank())                            # no minor gridlines
       ) %>%
         ggplotly(tooltip = c("group","y","x")) %>%
         layout(legend = list(orientation = "h",
