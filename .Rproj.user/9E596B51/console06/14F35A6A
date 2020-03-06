@@ -1,0 +1,28 @@
+[0m[0K]0;:/k/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[?25l
+[0;32mM994810@CL003584 [0;35m [0;33m/k/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[0m[0K
+$ git[0K[7G[?25h[?25l$ git i[0K[?25hn[0Kit[0K[?25l
+[0K[?25hInitialized empty Git repository in //ler365fs/fbs2/Users/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[0K/[?25l
+.git/[0K
+[0K[?25h[?25l
+[0;32mM994810@CL003584 [0;35m [0;33m/k/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[0;36m (master)[0m[0K
+$[0K[3G[?25h[?25l$ git commit -m "first commit"[0K[?25h[?25l
+[0K[?25hOn branch master[0K[?25l
+[0K
+Initial commit[0K
+[0K
+Untracked files:[0K
+  (use "git add <file>..." to include in what will be committed)[0K
+        [0;31m.Rproj.user/[0m[0K
+        [0;31mPayments reduction app for git.Rproj[0m[0K
+        [0;31mR/[0m[0K
+[0K
+nothing added to commit but untracked files present (use "git add" to track)[0K
+[0K[?25h[?25l
+[0;32mM994810@CL003584 [0;35m [0;33m/k/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[0;36m (master)[0m[0K
+$[0K[3G[?25h[?25l$ g[0K[?25hi[0Kt[0K[7G[?25l$ git d[0K[?25hd[0K[?25l$ git d[0K[?25h[?25l$ git[0K[7G[?25h[?25l$ git a[0K[?25hd[0Kd[0K[?25l
+[0K[?25hNothing specified, nothing added.[0K[?25l
+Maybe you wanted to say 'git add .'?[0K
+[0K[?25h[?25l
+[0;32mM994810@CL003584 [0;35m [0;33m/k/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[0;36m (master)[0m[0K
+$ git add[0K[?25h[11G[?25l$ git add .[0K[?25h[?25l
+[0K[?25h
