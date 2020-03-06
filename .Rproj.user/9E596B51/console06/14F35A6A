@@ -25,4 +25,53 @@ Maybe you wanted to say 'git add .'?[0K
 [0K[?25h[?25l
 [0;32mM994810@CL003584 [0;35m [0;33m/k/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[0;36m (master)[0m[0K
 $ git add[0K[?25h[11G[?25l$ git add .[0K[?25h[?25l
-[0K[?25h
+[0K[?25h[?25l
+[0;32mM994810@CL003584 [0;35m [0;33m/k/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[0;36m (master)[0m[0K
+$[0K[3G[?25h[?25l$ git add .[0K[?25h[?25l$ git add[0K[?25h[?25l$ git commit -m "first commit"[0K[?25h[?25l
+[0K[?25h[master (root-commit) a278c65] first commit[0K[?25l
+ Committer: Betts <Clare.Betts@defra.gov.uk>[0K
+Your name and email address were configured automatically based[0K
+on your username and hostname. Please check that they are accurate.[0K
+You can suppress this message by setting them explicitly:[0K
+[0K
+    git config --global user.name "Your Name"[0K
+    git config --global user.email you@example.com[0K
+[0K
+After doing this, you may fix the identity used for this commit with:[0K
+[0K
+    git commit --amend --reset-author[0K
+[0K
+ 14 files changed, 5495 insertions(+)[0K
+ create mode 100644 .Rproj.user/9E596B51/console06/14F35A6A[0K
+ create mode 100644 .Rproj.user/9E596B51/console06/INDEX001[0K
+ create mode 100644 .Rproj.user/9E596B51/sources/s-D1FC64D5/lock_file[0K
+ create mode 100644 .Rproj.user/shared/notebooks/patch-chunk-names[0K
+ create mode 100644 Payments reduction app for git.Rproj[0K
+ create mode 100644 R/Payments_reductions_BPS_FBS_dev.R[0K
+ create mode 100644 R/Payments_reductions_support_functions.R[0K
+ create mode 100644 R/empty.app.R[0K
+ create mode 100644 R/mean_byfac2.R[0K
+ create mode 100644 R/non.shiny.script.R[0K
+ create mode 100644 R/progressive_dp3_3year1718_BPS_CB.R[0K
+ create mode 100644 R/progressive_dp3_3year1718_BPS_EUR.R[0K
+ create mode 100644 R/progressive_dp3_3year1718_BPS_dev.R[0K
+ create mode 100644 R/progressive_dp3_data_processing_1718.R[0K
+[0K[?25h[?25l
+[0;32mM994810@CL003584 [0;35m [0;33m/k/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[0;36m (master)[0m[0K
+$[0K[3G[?25h[?25l$ g[0K[?25hit remote add origin https://github.com/clarebetts-code/payments_shiny_app.git[0K[?25l
+[0K[?25h[?25l
+[0;32mM994810@CL003584 [0;35m [0;33m/k/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[0;36m (master)[0m[0K
+$[0K[3G[?25h[?25l$ git push -u origin master[0K[?25h[?25l
+[0K[?25hEnumerating objects: 23, done.[0K[?25l
+[0K[?25h[?25lCounting objects:   8% (2/23)[0K[1G[?25h[?25lCounting objects:  13% (3/23)[0K[1G[?25h[?25lCounting objects:  17% (4/23)[0K[1G[?25h[?25lCounting objects:  21% (5/23)[0K[1G[?25h[?25lCounting objects:  26% (6/23)[0K[1G[?25h[?25lCounting objects:  30% (7/23)[0K[1G[?25h[?25lCounting objects:  34% (8/23)[0K[1G[?25h[?25lCounting objects:  39% (9/23)[0K[1G[?25h[?25lCounting objects:  43% (10/23)[0K[1G[?25h[?25lCounting objects:  47% (11/23)[0K[1G[?25h[?25lCounting objects:  52% (12/23)[0K[1G[?25h[?25lCounting objects:  60% (14/23)[0K[1G[?25h[?25lCounting objects:  65% (15/23)[0K[1G[?25h[?25lCounting objects:  73% (17/23)[0K[1G[?25h[?25lCounting objects:  78% (18/23)[0K[1G[?25h[?25lCounting objects:  82% (19/23)[0K[1G[?25h[?25lCounting objects:  91% (21/23)[0K[1G[?25h[?25lCounting objects:  95% (22/23)[0K[1G[?25hCounting objects: 100% (23/23), done.[0K[?25l
+Delta compression using up to 4 threads[0K
+Compressing objects:  16% (3/18)[0K[1G[?25h[?25lCompressing objects:  27% (5/18)[0K[1G[?25h[?25lCompressing objects:  38% (7/18)[0K[1G[?25h[?25lCompressing objects:  44% (8/18)[0K[1G[?25h[?25lCompressing objects:  55% (10/18)[0K[1G[?25h[?25lCompressing objects:  61% (11/18)[0K[1G[?25h[?25lCompressing objects:  83% (15/18)[0K[1G[?25h[?25lCompressing objects:  94% (17/18)[0K[1G[?25hCompressing objects: 100% (18/18), done.[0K[?25l
+[0K[?25h[?25lWriting objects:   8% (2/23)[0K[1G[?25h[?25lWriting objects:  13% (3/23)[0K[1G[?25h[?25lWriting objects:  26% (6/23)[0K[1G[?25h[?25lWriting objects:  34% (8/23)[0K[1G[?25h[?25lWriting objects:  43% (10/23)[0K[1G[?25h[?25lWriting objects:  52% (12/23)[0K[1G[?25h[?25lWriting objects:  56% (13/23)[0K[1G[?25h[?25lWriting objects:  60% (14/23)[0K[1G[?25h[?25lWriting objects:  69% (16/23)[0K[1G[?25h[?25lWriting objects:  78% (18/23)[0K[1G[?25h[?25lWriting objects:  86% (20/23)[0K[1G[?25hWriting objects: 100% (23/23), 23.52 KiB | 31.00 KiB/s, done.[0K[?25l
+Total 23 (delta 6), reused 0 (delta 0)[0K
+[0K[?25hremote: Resolving deltas: 100% (6/6), done.[0K[?25l
+[0K[?25hTo https://github.com/clarebetts-code/payments_shiny_app.git[0K[?25l
+ * [new branch]      master -> master[0K
+[0K[?25hBranch 'master' set up to track remote branch 'master' from 'origin'.[0K[?25l
+[0K[?25h[?25l
+[0;32mM994810@CL003584 [0;35m [0;33m/k/TASPrototype/FBSmastercopy/FBS_ADHOC_DATA_REQUESTS/EU Exit/Payments reduction app for git[0;36m (master)[0m[0K
+$[0K[3G[?25h

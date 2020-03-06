@@ -15,25 +15,24 @@ pacman::p_load(dplyr,
                FBSCore,
                tibble,
                shiny,
-               #akima,
                shinycssloaders,
                plotly,
-               ggplot2)
+               ggplot2,
+               shinythemes)
 
 
-
-setwd("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reduction shiny app")
 
 # read in support functions
 source("Payments_reductions_support_functions.R")
 
-load(file = "shiny.app.data.Rdata")
+load(file = "K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Data\\shiny.app.data.Rdata")
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Define UI for application
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ui <- fluidPage(
+  theme = shinytheme("flatly"),
   # Application title
   titlePanel("Farm Business Income Direct Payment reductions"),
   # Sidebar with a slider input for number of bins 
