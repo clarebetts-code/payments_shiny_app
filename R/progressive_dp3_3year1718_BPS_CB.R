@@ -44,15 +44,12 @@ av_3year <- function(dat, item, years = 2015:2017){
 }
 #####
 
-setwd("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reduction shiny app")
-
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #    RPA Payment data
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #####
 #rpapaydata <- readRDS("Data\\28012020 BPS 2018.Rds")
-rpapaydata <- read.csv("Data\\elm_analysis_bps_data_09jul19.csv")
+rpapaydata <- read.csv("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Data\\elm_analysis_bps_data_09jul19.csv")
 
 # select just the columns we need, and rename the payment column
 rpapaydata %>%
@@ -70,7 +67,7 @@ rpapaydata %>%
 # Get FBS data
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #####
-fbs_3yr <- readRDS("Data\\fbs_england_3yr_15_17.Rds")
+fbs_3yr <- readRDS("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Data\\fbs_england_3yr_15_17.Rds")
 
 
 
