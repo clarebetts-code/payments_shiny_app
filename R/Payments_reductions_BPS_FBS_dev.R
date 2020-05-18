@@ -2,10 +2,6 @@
 # This is a Shiny web application. You can run the application by clicking
 # the 'Run App' button above.
 #
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 pacman::p_load(dplyr,
@@ -21,11 +17,15 @@ pacman::p_load(dplyr,
                ggplot2)
 
 
+##### NEED to double check which years data is used #####
 
 # read in support functions
-source("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Payments reduction app for git\\R\\Payments_reductions_support_functions.R")
+source("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Payments reduction app for git\\R\\Payments_reductions_support_functions.R")
+#source("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Payments reduction app for git\\R\\Payments_reductions_support_functions.R")
 
-load(file = "K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Data\\shiny.app.data.Rdata")
+# load data
+load(file = "C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\shiny.app.data.Rdata")
+#load(file = "K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Data\\shiny.app.data.Rdata")
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -33,7 +33,7 @@ load(file = "K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ui <- fluidPage(
   # Application title
-  titlePanel("Farm Business Income Direct Payment reductions"),
+  titlePanel("Queries to: fbs.queries@defra.gov.uk"),
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     position = "left",
@@ -50,7 +50,7 @@ ui <- fluidPage(
                                  "lfa",
                                  "fbi_band",
                                  "fbi_band1",
-                                 "fbi_band2",
+                                 "fbi_exc_DP",
                                  "age_band",
                                  "farmer_gender",
                                  "dp_band"),
@@ -71,7 +71,7 @@ ui <- fluidPage(
                         value=1000000,step = 5000),
            numericInput("Level_5",
                         "Upto Level 5:",
-                        value=1000000,step = 5000)
+                        value=10000000,step = 5000)
        ),
        div(style="display: inline-block;vertical-align:top; width: 100px;",
            numericInput("prop_1",
@@ -88,12 +88,34 @@ ui <- fluidPage(
      ),
       
       mainPanel(
+        # main panel has two columns for the summary statements
+        fluidRow(
+          h3("Reductions applied to TOTAL payment [BPS, greening & Young farmer]"),
+          column(5,
+                 h4(spinner(textOutput("caption1a", container = span)))
+          ),
+          column(5,
+                 h4(textOutput("caption1b", container = span))
+          )
+        ),
         tabsetPanel(type = "tabs",
-                    tabPanel("Next..."),
-                    tabPanel("Payment \nimpact", 
+                    tabPanel("Expenditure impact",
+                             h2("Source: Rural Payments Agency, payments data for 2018 scheme year"),
+                             h3("Total expenditure saved by payment band"),
+                             spinner(plotlyOutput("plot2"))),
+                    tabPanel("FBI impact", 
+                             h2("Source: Farm Business Survey 3 year matched dataset 2016/17 - 2018/19"),
+                             h3("Average Farm Business Income (FBI) per farm:"),
+                             spinner(DT::dataTableOutput("table_2"))),
+                    tabPanel("Payment recieved \nimpact", 
+                             h2("Source: Farm Business Survey 3 year matched dataset 2016/17 - 2018/19"),
+                             h3("Average payment, and loss of payment per farm:"),
                              spinner(plotlyOutput("plot1")),
-                      spinner(DT::dataTableOutput("table_1"))),
-                    tabPanel("FBI impact", spinner(DT::dataTableOutput("table_2")))
+                             spinner(DT::dataTableOutput("table_1")),
+                             h3("Direct payments as a proportion of FBI:"),
+                             spinner(DT::dataTableOutput("table_3"))),
+                    tabPanel("Next...")
+                    
                     
                     )
         )
@@ -117,6 +139,11 @@ server <- function(input, output) {
   # function to simplify the code to calculate the means
   mean_byfac_new <- function(vars, factor = input$fbsfac, design = fbsdesign()){
     FBSCore::mean_byfac(vars, factor, design)
+  }
+  
+  # function to simplify the code to calculate the means
+  ratio_byfac_new <- function(numerators, denominators, factor = input$fbsfac, design = fbsdesign()){
+    FBSCore::ratio_byfac(numerators, denominators, factor, design)
   }
   
   
@@ -175,6 +202,54 @@ server <- function(input, output) {
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   # CALCULATIONS
   
+  # This calculates the loss for each business using RPA data based on the TOTAL PAYMENT
+  Loss_rpa <- reactive ({
+
+    rpaloss <- subset(RPApay_interim, RPApay_interim$Total_Payment_pounds > 0)
+    rpaloss$loss <- dplyr::case_when(
+      # if payment is less than first level, reduce by prop_1
+      rpaloss$Total_Payment_pounds < input$Level_1 ~
+        band_1_reduction(rpaloss$Total_Payment_pounds),
+      # if payment is between level 1 and level 2
+      dplyr::between(rpaloss$Total_Payment_pounds, input$Level_1+0.01, input$Level_2) ~
+        band_2_reduction(rpaloss$Total_Payment_pounds),
+      # if payment is between level 2 and level 3
+      dplyr::between(rpaloss$Total_Payment_pounds, input$Level_2+0.01, input$Level_3) ~
+        band_3_reduction(rpaloss$Total_Payment_pounds), 
+      # if payment is between level 3 and level 4
+      dplyr::between(rpaloss$Total_Payment_pounds, input$Level_3+0.01, input$Level_4) ~ 
+        band_4_reduction(rpaloss$Total_Payment_pounds),
+      # if payment is between level 4 and level 5
+      dplyr::between(rpaloss$Total_Payment_pounds, input$Level_4+0.01, input$Level_5) ~ 
+        band_5_reduction(rpaloss$Total_Payment_pounds)
+    )
+    
+    rpaloss %>%
+      mutate(
+        # bands for original payments
+        pay_band = cut(rpaloss$Total_Payment_pounds, 
+                       breaks = c(0, 5000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 75000,  100000, 125000, 150000, 200000, 250000, 300000, Inf), 
+                       labels = c("0 to 5k", "5 to 10k", "10 to 15k", "15 to 20k", "20 to 25k", "25 to 30k", "30 to 40k", "40 to 50k", "50 to 75k", "75 to 100k", "100 to 125k", "125 to 150k","150 to 200k", "200k to 250k", "250k to 300k", "over 300k"), 
+                       levels =c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16),
+                       right = TRUE,
+                       ordered_result = TRUE),
+        # bands for money lost
+        pay_band_money_lost = cut(rpaloss$loss, 
+                                  breaks = c(0, 0.001, 5000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 75000,  100000, 125000, 150000, 200000, 250000, 300000, Inf), 
+                                  labels = c("No loss", "0 to 5k", "5 to 10k", "10 to 15k", "15 to 20k", "20 to 25k", "25 to 30k", "30 to 40k", "40 to 50k", "50 to 75k", "75 to 100k", "100 to 125k", "125 to 150k","150 to 200k", "200k to 250k", "250k to 300k","over 300k"), 
+                                  levels =c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18),
+                                  right = TRUE,
+                                  ordered_result = TRUE),
+        # number affected
+        num_affected = ifelse(rpaloss$loss==0, 0, 1),
+        
+        # dummy variable to help calculate proportions
+        dummy = 1)
+
+
+  })
+  
+  # This calculates the loss for each business using FBS data
   Loss_fbs <- reactive ({
     #This calculates the loss for each business using FBS data
     fbsloss <- fbs_3yr
@@ -183,16 +258,16 @@ server <- function(input, output) {
       fbsloss$dp_3yr <= input$Level_1 ~ 
         band_1_reduction(fbsloss$dp_3yr),
       # if payment is between level 1 and level 2
-      dplyr::between(fbsloss$dp_3yr, input$Level_1+1, input$Level_2) ~ 
+      dplyr::between(fbsloss$dp_3yr, input$Level_1+0.01, input$Level_2) ~ 
         band_2_reduction(fbsloss$dp_3yr),
       # if payment is between level 2 and level 3
-      dplyr::between(fbsloss$dp_3yr, input$Level_2+1, input$Level_3) ~ 
+      dplyr::between(fbsloss$dp_3yr, input$Level_2+0.01, input$Level_3) ~ 
         band_3_reduction(fbsloss$dp_3yr),
       # if payment is between level 3 and level 4
-      dplyr::between(fbsloss$dp_3yr, input$Level_3+1, input$Level_4) ~ 
+      dplyr::between(fbsloss$dp_3yr, input$Level_3+0.01, input$Level_4) ~ 
         band_4_reduction(fbsloss$dp_3yr),
       # if payment is between level 4 and level 5
-      dplyr::between(fbsloss$dp_3yr, input$Level_4+1, input$Level_5) ~ 
+      dplyr::between(fbsloss$dp_3yr, input$Level_4+0.01, input$Level_5) ~ 
         band_5_reduction(fbsloss$dp_3yr)
     ) 
     
@@ -238,13 +313,13 @@ server <- function(input, output) {
                        ordered_result = TRUE),
         # sets up a factor for fams by FBI (original)
         fbi_band1 = cut(fbi_3yr,
-                        breaks = c(-Inf,0,10000,25000,50000,Inf), 
-                        labels = c("less than zero", "0 to 10k","10 to 25k","25 to 50k","Over 50k"), 
-                        levels =c(1,2,3,4),
+                        breaks = c(-Inf,0,10000,20000,30000,40000,50000,100000,Inf), 
+                        labels = c("less than zero", "0 to 10k","10 to 20k","20 to 30k","30 to 40k","40 to 50k","50 to 100k","Over 100k"), 
+                        levels =c(1,2,3,4,5,6,7,8),
                         right = TRUE,
                         ordered_result = TRUE),
         # sets up a factor for fams by FBI (original)
-        fbi_band2 = cut(fbi_min_dp_cc_3yr, 
+        fbi_exc_DP = cut(fbi_min_dp_cc_3yr, 
                         breaks = c(-Inf,0,10000,20000,30000,40000,50000,100000,Inf), 
                         labels = c("less than zero", "0 to 10k","10 to 20k","20 to 30k","30 to 40k","40 to 50k","50 to 100k","Over 100k"), 
                         levels =c(1,2,3,4,5,6,7,8),
@@ -288,56 +363,49 @@ server <- function(input, output) {
   # OUTPUTS
   
   output$caption1a <- renderText({
-    paste("Number of farms in sample = ",
-          length(Loss_fbs()$farms)
+    paste("Total paid in 2018 = £",
+          format(round(sum(Loss_rpa()$Total_Payment_pounds),0),big.mark=","),
+          "to ",
+          format(round(sum(Loss_rpa()$dummy),0),big.mark=","),
+          " businesses"
     )
   })
   
   output$caption1b <- renderText({
-    paste("Total payments lost = ",
-          sum(Loss_fbs()$loss * Loss_fbs()$newwt3yr)
+    paste0("RPA Saved: £", format(round(sum(Loss_rpa()$loss),0), big.mark=","),
+          " (",
+          format(round(100*sum(Loss_rpa()$loss/sum(Loss_rpa()$Total_Payment_pounds),0))),
+          "%) from ",
+          format(round(sum(Loss_rpa()$num_affected),0),big.mark=","),
+          " Businesses (",
+          format(round(100*(sum(Loss_rpa()$num_affected))/sum(Loss_rpa()$dummy))),
+          "%)"
     )
   })
   
 
   table1 <-  reactive({
     
-    mean_byfac_new("loss")[, c(1, 2, 5)] %>%
-      bind_cols(data.frame(
-        mosaic::sum(Loss_fbs()$num_affected ~ (Loss_fbs())[,input$fbsfac])
-      ) %>%
-        rbind(sum(Loss_fbs()$num_affected)),
-      mean_byfac_new("dp_3yr")[, c(2, 5)]) %>%
-      mutate('proportional loss of DP' = scales::percent((loss / dp_3yr), accuracy = 1)) 
-    
-    # this doesn't work in shiny but would be clearer to read:
     mean_byfac_new(c("loss", "dp_3yr"))  %>% {
       tibble(fbsfac = .[[1]],
              Average_payment_loss = .[[2]],
              CI_average_payment_loss = .[[7]],
              sample_payment_loss = c(mosaic::sum(Loss_fbs()$num_affected ~ (Loss_fbs())[,input$fbsfac], sum(Loss_fbs()$num_affected))),
              Average_original_payment = .[[3]],
-             CI_average_original_payment = .[[8]]
-      )} %>%
-      select(fbsfac,
-             Average_payment_loss,
-             CI_average_payment_loss,
-             sample_payment_loss,
-             Average_original_payment,
-             CI_average_original_payment) %>%
-      mutate(proportional_loss = scales::percent((Average_payment_loss / Average_original_payment), accuracy = 1),
-             CI_average_payment_loss = CI_average_payment_loss * -1,
-             CI_average_original_payment = CI_average_original_payment * -1)
+             CI_average_original_payment = .[[8]])}   %>%
+      mutate(
+        proportional_loss = scales::percent((Average_payment_loss / Average_original_payment), accuracy = 1)
+      ) 
     
     })
   
   output$table_1 <- DT::renderDataTable({
     
     table1()  %>%
-      dplyr::rename('Average payment loss (£)' = 2,
+      dplyr::rename('Average payment loss (£ per farm)' = 2,
                     '\u00B1 95% CI payment loss' = 3,
                     'num in sample with payment loss' = 4,
-                    'Average original payment (£)' = 5,
+                    'Average original payment (£ per farm)' = 5,
                     '\u00B1 95% CI original payment' = 6,
                     'Proportional loss of DP' = 7) %>%
       nice_table() %>%
@@ -345,8 +413,7 @@ server <- function(input, output) {
 
     })
   
-
-    output$plot1 <- renderPlotly({
+  output$plot1 <- renderPlotly({
       
       (table1() %>% {
         tibble(fbsfac = rep(.[[1]], 2),
@@ -358,7 +425,10 @@ server <- function(input, output) {
          geom_errorbar(aes(ymin = y-CI, ymax = y+CI), position = "dodge", stat="identity") +
          scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
          scale_fill_manual(values=colours.helper(c("one", "two"))) +
-         labs(y = "£ per farm", x = "", title = "Average payment and loss of payment per farm") +
+         labs(#title = "Average payment and loss of payment per farm",
+              y = "£ per farm", 
+              x = "" 
+              ) +
          theme_minimal() +                                                    # white background, grey lines
          theme(panel.grid.minor = element_blank())                            # no minor gridlines
       ) %>%
@@ -366,16 +436,15 @@ server <- function(input, output) {
         layout(legend = list(orientation = "h",
                              y = -0.2, x = 0
                              ))
-                 
-      
+   
     })
-
-  
   
   output$table_2 <- DT::renderDataTable({
     
     # column 1 & 2
-    columns_1_2 <- mean_byfac_new("fbi_3yr")[, c(1, 2, 5)]
+    first_column <- mean_byfac_new("fbi_3yr")[,1]
+    
+    columns_1_2 <- mean_byfac_new("fbi_3yr")[, c("fbi_3yr", "Ci.fbi_3yr")]
     
     # column 3
     bla1 <- total_byfac_new("neg_fbi")
@@ -392,7 +461,7 @@ server <- function(input, output) {
                   "All farms" = sum(Loss_fbs()$neg_fbi)) 
     
     # column 5 & 6
-    columns_5_6 <- mean_byfac_new("new_fbi")[, c(2, 5)]
+    columns_5_6 <- mean_byfac_new("new_fbi")[, c("new_fbi", "Ci.new_fbi")]
     
     # column 7
     bla1 <- total_byfac_new("negnew_fbi")
@@ -407,8 +476,9 @@ server <- function(input, output) {
     column_8 <- c(mosaic::sum(Loss_fbs()$negnew_fbi ~ (Loss_fbs())[,input$fbsfac]),
                   "All farms" = sum(Loss_fbs()$negnew_fbi))
     
-    columns_1_2 %>%
-      cbind(column_3,
+    first_column %>%
+      cbind(columns_1_2,
+            column_3,
             column_4,
             columns_5_6,
             column_7,
@@ -426,7 +496,68 @@ server <- function(input, output) {
       
   })
   
+  table3 <- reactive({
+    
+    mean_byfac_new(c("fbi_3yr", "dp_3yr", "newdp", "new_fbi"))[,c(1:5,11:14)] %>% {
+      tibble(fbsfac = .[[1]],
+             Average_FBI = .[[2]],
+             CI_Average_FBI = .[[6]],
+             Average_DP = .[[3]],
+             CI_Average_DP = .[[7]],
+             Average_new_FBI = .[[5]],
+             CI_Average_new_FBI = .[[9]],
+             Average_new_DP = .[[4]],
+             CI_Average_new_DP = .[[8]])
+    } %>%
+      bind_cols(., ratio_byfac_new(numerators = c("dp_3yr", "newdp"), denominators = c("fbi_3yr", "new_fbi")) %>% {
+        tibble(DP_prop_FBI = scales::percent(.[[2]], accuracy = 1),
+               CI_DP_prop_FBI = scales::percent(.[[7]], accuracy = 1),
+               new_DP_prop_new_FBI = scales::percent(.[[3]], accuracy = 1),
+               CI_new_DP_prop_FBI = scales::percent(.[[8]], accuracy = 1))
+      })
+  })
   
+  output$table_3 <- DT::renderDataTable({
+    
+    table3() %>%
+    dplyr::rename('Farm Business Income (£ per farm)' = 2,
+                  '\u00B1 95% CI FBI' = 3,
+                  'Direct payment (£ per farm)' = 4,
+                  '\u00B1 95% CI DP' = 5,
+                  'Farm Business Income after payment loss (£ per farm)' = 6,
+                  '\u00B1 95% CI FBI after payment loss' = 7,
+                  'Direct payment after payment loss (£ per farm)' = 8,
+                  '\u00B1 95% CI DP after payment loss' = 9,
+                  'Direct payment as a proportion of FBI' = 10,
+                  '\u00B1 95% CI DP as prop FBI' = 11,
+                  'Direct payment as a proportion of FBI after payment loss (£ per farm)' = 12,
+                  '\u00B1 95% CI DP as prop FBI after payment loss' = 13) %>%
+      .[,c(1:5, 10:11, 6:9, 12:13)] %>% # re-order columns
+      nice_table()%>%
+      DT::formatRound(columns=c(2:5,8:11), digits=0)
+    
+  })
+  
+  output$plot2 <- renderPlotly({
+    
+    (tibble(pay_band = levels(Loss_rpa()$pay_band),
+            expenditure_saved = mosaic::sum(Loss_rpa()$loss ~ Loss_rpa()$pay_band)) %>%
+       mutate(expenditure_saved_m = expenditure_saved/1000000,
+              label = paste("£", round(expenditure_saved_m, 1), "m", sep = "")) %>%
+       ggplot(aes(x= pay_band, y = expenditure_saved_m)) +  
+       geom_bar(position = "dodge", stat="identity", fill = "#416146") +
+       scale_x_discrete(labels = function(x) str_wrap(x, width = 9)) +
+       #scale_fill_manual(values=colours.helper(c("one"))) +
+       labs(y = "Total loss (£ million)", x = "Direct payment band") +
+       geom_text(
+         aes(label = label, y = expenditure_saved_m + 0.2),
+         position = position_dodge(0.9),
+         vjust = 0,
+         size = 3
+       )) %>%
+      ggplotly(tooltip = c("group","y","x")) 
+    
+  })
 
 }
 

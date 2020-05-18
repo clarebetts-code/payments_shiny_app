@@ -17,7 +17,7 @@ spinner<-function(output){
 # function to get colours right on graphs
 colours.helper <- function(x){
   len <- length(unique(x))
-  
+  if(len == 1){cols <- c("#416146")}
   if(len == 2){cols <- c("#416146",	"#7AA680")}
   if(len == 3){cols <- c("#3D5B41",	"#BDD3C0",	"#7AA680")}
   if(len == 4){cols <- c("#39553D",	"#D6E4D8",	"#5F8D66",	"#9BBBA0")}
