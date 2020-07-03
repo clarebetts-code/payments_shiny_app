@@ -22,7 +22,7 @@ source("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Payments red
 rpa_year <- 2019
 RPA_data <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\20200520 BPS 2019.Rds")
 # 2015/16-2017/18 FBS data
-fbs_3yr <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\fbs_england_3yr_15_17.Rds")
+fbs_3yr <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\fbs_england_3yr_15_17_2.Rds")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Do some processing on the FBS data - calculate 3 year averages
@@ -42,29 +42,29 @@ av_3year <- function(dat, item, years = 2015:2017){
 fbs_3yr %>%
   dplyr::mutate(
     # group some farm types to improve sample size
-    type_red = forcats::fct_recode(type,
+    type.red = forcats::fct_recode(type,
                                    `Pigs & Poultry` =  "Pigs",
                                    `Pigs & Poultry`="Poultry",
                                    `Cereals & General cropping`="Cereals",
                                    `Cereals & General cropping`="General cropping"),
     # merge spare time and part time
-    farm_size = forcats::fct_recode(slrgroup,
+    farm.size = forcats::fct_recode(slrgroup,
                                     `Spare/Part-time` =  "Spare-time",
                                     `Spare/Part-time` =  "Part-time"),
     # put ages into age bands
-    age_band = as.factor(cut(X.16age_of_farmer, 
+    age.band = as.factor(cut(X.16age.of.farmer, 
                              breaks = c(-10000000, 40, 50, 60, 70, Inf), 
                              labels = c("Under 40", "40-49", "50-59", "60-69", "70 and over"), 
                              levels =c(1,2,3,4,5),
                              right = FALSE,
                              ordered_result = TRUE)),
-    farm_size = forcats::fct_relevel(farm_size,
+    farm.size = forcats::fct_relevel(farm.size,
                                      "Spare/Part-time",
                                      "Small",
                                      "Medium",
                                      "Large",
                                      "Very large"),
-    type_red = forcats::fct_relevel(type_red,
+    type.red = forcats::fct_relevel(type.red,
                                     "Cereals & General cropping",
                                     "Dairy",
                                     "LFA Grazing Livestock",
@@ -91,17 +91,17 @@ fbs_3yr %>%
                                "Mainly SDA"),
     
     #    Calculate the 3 year averages
-    fbi_3yr = av_3year(.,"farm_business_income"),
-    agout_3yr = av_3year(.,"output_from_agriculture"),
-    aginc_3yr = av_3year(.,"agriculture_input_costs"),
-    dp_3yr = av_3year(.,"basic_payment_scheme"),
-    dp_costs_3yr = av_3year(.,"BPS_costs"),
+    fbi.3yr = av_3year(.,"farm.business.income"),
+    agout.3yr = av_3year(.,"output.from.agriculture"),
+    aginc.3yr = av_3year(.,"agriculture.input.costs"),
+    dp.3yr = av_3year(.,"basic.payment.scheme"),
+    dp.costs.3yr = av_3year(.,"BPS.costs"),
     
     # Remove SPS from income
     # SPS cost centre
-    dp_cc_3yr = dp_3yr - dp_costs_3yr,
+    dp.cc.3yr = dp.3yr - dp.costs.3yr,
     #FBI minus SPS cost centre
-    fbi_min_dp_cc_3yr = fbi_3yr - dp_cc_3yr)  -> fbs_3yr
+    fbi.min.dp.cc.3yr = fbi.3yr - dp.cc.3yr)  -> fbs_3yr
 
 total_byfac_new <- function(vars, factor = input$fbsfac, design = fbsdesign){
   FBSCore::total_byfac(vars, factor, design)
@@ -170,75 +170,75 @@ fbs_3yr %>%
   dplyr::mutate(
     loss = dplyr::case_when(
       # if payment is less than first level, reduce by prop_1
-      dp_3yr <= input$Level_1 ~ 
-        band_1_reduction(dp_3yr),
+      dp.3yr <= input$Level_1 ~ 
+        band_1_reduction(dp.3yr),
       # if payment is between level 1 and level 2
-      dplyr::between(dp_3yr, input$Level_1+1, input$Level_2) ~ 
-        band_2_reduction(dp_3yr),
+      dplyr::between(dp.3yr, input$Level_1+1, input$Level_2) ~ 
+        band_2_reduction(dp.3yr),
       # if payment is between level 2 and level 3
-      dplyr::between(dp_3yr, input$Level_2+1, input$Level_3) ~ 
-        band_3_reduction(dp_3yr),
+      dplyr::between(dp.3yr, input$Level_2+1, input$Level_3) ~ 
+        band_3_reduction(dp.3yr),
       # if payment is between level 3 and level 4   
-      dplyr::between(dp_3yr, input$Level_3+1, input$Level_4) ~ 
-        band_4_reduction(dp_3yr),
+      dplyr::between(dp.3yr, input$Level_3+1, input$Level_4) ~ 
+        band_4_reduction(dp.3yr),
       # if payment is between level 4 and level 5
-      dplyr::between(dp_3yr, input$Level_4+1, input$Level_5) ~ 
-        band_5_reduction(dp_3yr)
-      ),
+      dplyr::between(dp.3yr, input$Level_4+1, input$Level_5) ~ 
+        band_5_reduction(dp.3yr)
+    ),
     
     # marker for affected farms
-    num_affected = ifelse(loss==0, 0, 1),
+    num.affected = ifelse(loss==0, 0, 1),
     # calculates new direct payment
-    newdp = dp_3yr - loss,
+    newdp = dp.3yr - loss,
     # calculates new direct payment costs pro rata
-    new_dpcost = ifelse(dp_3yr == 0, 0, newdp * dp_costs_3yr/dp_3yr),
+    new.dpcost = ifelse(dp.3yr == 0, 0, newdp * dp.costs.3yr/dp.3yr),
     # calculates new direct payment cost centre
-    new_dp_cc = newdp - new_dpcost,
+    new.dp.cc = newdp - new.dpcost,
     # calculates new FBI
-    new_fbi = fbi_3yr - dp_cc_3yr + new_dp_cc,
+    new.fbi = fbi.3yr - dp.cc.3yr + new.dp.cc,
     # calculates change in FBI
-    fbi_change = fbi_3yr-new_fbi,
+    fbi.change = fbi.3yr-new.fbi,
     
     # marker for farms with negative FBI
-    neg_fbi = ifelse(fbi_3yr < 0, 1, 0),
+    neg.fbi = ifelse(fbi.3yr < 0, 1, 0),
     # marker for farms with negative FBI after loss of payment
-    negnew_fbi = ifelse(new_fbi < 0, 1, 0),
+    negnew.fbi = ifelse(new.fbi < 0, 1, 0),
     # marker for farms with FBI < 10k
-    lt_10k_fbi = ifelse(fbi_3yr < 10000, 1, 0),
+    lt.10k.fbi = ifelse(fbi.3yr < 10000, 1, 0),
     # marker for farms with FBI < 10k after loss of payment
-    under10knew_fbi = ifelse(new_fbi < 10000, 1, 0),
+    under10knew.fbi = ifelse(new.fbi < 10000, 1, 0),
     # marker for farms with FBI < 25k
-    lt_25k_fbi = ifelse(fbi_3yr < 25000, 1, 0),
+    lt.25k.fbi = ifelse(fbi.3yr < 25000, 1, 0),
     # marker for farms with FBI < 25k after loss of payment
-    under25knew_fbi = ifelse(new_fbi < 25000, 1, 0),
+    under25knew.fbi = ifelse(new.fbi < 25000, 1, 0),
     # marker for farms with FBI < 50k
-    lt_50k_fbi = ifelse(fbi_3yr < 50000, 1, 0),
+    lt.50k.fbi = ifelse(fbi.3yr < 50000, 1, 0),
     # marker for farms with FBI < 50k after loss of payment
-    under50knew_fbi = ifelse(new_fbi < 50000, 1, 0),
+    under50knew.fbi = ifelse(new.fbi < 50000, 1, 0),
     
     # sets up a factor for farms by FBI (original)
-    fbi_band = cut(fbi_3yr,  
+    fbi.band = cut(fbi.3yr,  
                    breaks = c(-Inf,0,10000,25000,Inf), 
                    labels = c("less than zero", "0 to 10k","10 to 25k","Over 25k"), 
                    levels =c(1,2,3,4),
                    right = TRUE,
                    ordered_result = TRUE),
     # sets up a factor for farms by FBI (original)
-    fbi_band1 = cut(fbi_3yr,
+    fbi.band1 = cut(fbi.3yr,
                     breaks = c(-Inf,0,10000,25000,50000,Inf), 
                     labels = c("less than zero", "0 to 10k","10 to 25k","25 to 50k","Over 50k"), 
                     levels =c(1,2,3,4),
                     right = TRUE,
                     ordered_result = TRUE),
     # sets up a factor for farms by FBI (original) excluding direct payment
-    fbi_exc_DP = cut(fbi_min_dp_cc_3yr, 
-                    breaks = c(-Inf,0,10000,20000,30000,40000,50000,100000,Inf), 
-                    labels = c("less than zero", "0 to 10k","10 to 20k","20 to 30k","30 to 40k","40 to 50k","50 to 100k","Over 100k"), 
-                    levels =c(1,2,3,4,5,6,7,8),
-                    right = TRUE,
-                    ordered_result = TRUE),
+    fbi.exc.DP = cut(fbi.min.dp.cc.3yr, 
+                     breaks = c(-Inf,0,10000,20000,30000,40000,50000,100000,Inf), 
+                     labels = c("less than zero", "0 to 10k","10 to 20k","20 to 30k","30 to 40k","40 to 50k","50 to 100k","Over 100k"), 
+                     levels =c(1,2,3,4,5,6,7,8),
+                     right = TRUE,
+                     ordered_result = TRUE),
     # sets up a factor for farms by direct payment (original)
-    dp_band = cut(dp_3yr,
+    dp.band = cut(dp.3yr,
                   breaks = c(-Inf,0,5000,10000,
                              15000,20000,25000,
                              30000,40000,
@@ -262,7 +262,7 @@ fbs_3yr %>%
   
 fbsdesign <- svydesign(id= ~farms,
                                  strata= ~stratum,
-                                 fpc=~num_pop,
+                                 fpc=~num.pop,
                                  data= fbsloss,
                                  weight= ~newwt3yr,
                                  nest=TRUE)
@@ -364,7 +364,7 @@ caption2b <-  paste0("RPA Saved: £", format(round(sum(rpaloss$loss),0), big.mar
 #  TABLE 2
 #####
 
-mean_byfac_new(c("fbi_3yr", "new_fbi"))[,c(1:3,7:8)] %>% {
+mean_byfac_new(c("fbi.3yr", "new.fbi"))[,c(1:3,7:8)] %>% {
   data.frame(fbsfac = .[[1]],
          Average_FBI = .[[2]],
          CI_Average_FBI = .[[4]],
@@ -372,27 +372,53 @@ mean_byfac_new(c("fbi_3yr", "new_fbi"))[,c(1:3,7:8)] %>% {
          CI_Average_new_FBI = .[[5]])
 } %>%
   cbind(., 
-        total_byfac_new(c("neg_fbi", "negnew_fbi", "dummy")) %>% {
-          data.frame(prop_neg = .[[2]]/.[[4]],
-                 new_prop_neg = .[[3]]/.[[4]])
-          },
-        c(mosaic::sum(neg_fbi~fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$neg_fbi)),
-        c(mosaic::sum(negnew_fbi~fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$negnew_fbi))
-        ) -> table2
+        # can't get ratio_byfac to accept multiple variables
+        ratio_byfac_new(numerators = "neg.fbi", "dummy")[,c(2,5)],
+        c(mosaic::sum(neg.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$neg.fbi)),
+        ratio_byfac_new(numerators = "negnew.fbi", "dummy")[,c(2,5)],
+        c(mosaic::sum(negnew.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$negnew.fbi)),
+        ratio_byfac_new(numerators = "lt.10k.fbi", "dummy")[,c(2,5)],
+        c(mosaic::sum(lt.10k.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$neg.fbi)),
+        ratio_byfac_new(numerators = "under10knew.fbi", "dummy")[,c(2,5)],
+        c(mosaic::sum(under10knew.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$negnew.fbi))
+  ) -> table2
 
 table2 %>%
   dplyr::rename('Farm Business Income (£ per farm)' = 2,
                 '\u00B1 95% CI FBI' = 3,
-                'Proportion of farms with FBI < 0' = 6,
-                'Number in sample' = 8,
+                
+                'Farm Business Income after payment loss (£ per farm)' = 4,
+                '\u00B1 95% CI FBI after payment loss' = 5) %>%
+  dplyr::select(1:5) %>%
+  DT::datatable() %>%
+  DT::formatRound(columns=c(2:5), digits=0) 
+
+table2_2 %>%
+  dplyr::rename('Farm Business Income (£ per farm)' = 2,
+                '\u00B1 95% CI FBI' = 3,
+                
+                'Proportion of farms with FBI < £0' = 6,
+                '\u00B1 95% CI for FBI < £0' = 7,
+                'Number in sample for FBI < £0' = 8,
+                
+                'Proportion of farms with FBI < £10k' = 12,
+                '\u00B1 95% CI for FBI < £10k' = 13,
+                'Number in sample for FBI < £10k' = 14,
+                
                 'Farm Business Income after payment loss (£ per farm)' = 4,
                 '\u00B1 95% CI FBI after payment loss' = 5,
-                'Proportion of farms with FBI < 0 after payment loss' = 7,
-                'Number in sample after payment loss' = 9) %>%
-  .[c(2,3,6,8,4,5,7,9)] %>% # re-order columns
+                
+                'Proportion of farms with FBI < 0 after payment loss' = 9,
+                '\u00B1 95% CI for FBI < £0 after payment loss' = 10,
+                'Number in sample after payment loss' = 11,
+                
+                'Proportion of farms with FBI < £10k after payment loss' = 15,
+                '\u00B1 95% CI for FBI < £10k after payment loss' = 16,
+                'Number in sample for FBI < £10k after payment loss' = 17) %>%
+  .[c(2, 3, 6, 7, 8, 12, 13, 14, 4, 5, 9, 10, 11, 15, 16, 17)] %>% # re-order columns
   DT::datatable() %>%
-  DT::formatRound(columns=c(1,2,5,6), digits=0) %>%
-  DT::formatPercentage(columns = c(3, 7))
+  DT::formatRound(columns=c(1,2,9,10), digits=0) %>%
+  DT::formatPercentage(columns = c(3, 4, 6, 7, 11, 12, 14, 15))
 
 #####
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -400,7 +426,7 @@ table2 %>%
 # direct payments as a proportion of FBI
 #####
 
-mean_byfac_new(c("dp_3yr", "newdp"))[,c(1:3,7:8)] %>% 
+mean_byfac_new(c("dp.3yr", "newdp"))[,c(1:3,7:8)] %>% 
  {tibble(fbsfac = .[[1]],
          Average_DP = .[[2]],
          CI_Average_DP = .[[4]],
@@ -408,7 +434,7 @@ mean_byfac_new(c("dp_3yr", "newdp"))[,c(1:3,7:8)] %>%
          CI_Average_new_DP = .[[5]])
 } %>%
   bind_cols(., 
-            ratio_byfac_new(numerators = c("dp_3yr", "newdp"), denominators = c("fbi_3yr", "new_fbi")) 
+            ratio_byfac_new(numerators = c("dp.3yr", "newdp"), denominators = c("fbi.3yr", "new.fbi")) 
             %>% {
               data.frame(DP_prop_FBI = .[[2]],
                      CI_DP_prop_FBI = .[[7]],
