@@ -318,6 +318,8 @@ RPA_data %>%
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # captions
 #####
+
+
 # summary of real RPA data
 caption1a <-     paste("Total paid in ",
                        rpa_year,
@@ -372,7 +374,7 @@ mean_byfac_new(c("fbi.3yr", "new.fbi"))[,c(1:3,7:8)] %>% {
          CI_Average_new_FBI = .[[5]])
 } %>%
   cbind(., 
-        # can't get ratio_byfac to accept multiple variables
+        # ratio_byfac can't handle repeated variable names so do seperately for now.
         ratio_byfac_new(numerators = "neg.fbi", "dummy")[,c(2,5)],
         c(mosaic::sum(neg.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$neg.fbi)),
         ratio_byfac_new(numerators = "negnew.fbi", "dummy")[,c(2,5)],
@@ -382,6 +384,7 @@ mean_byfac_new(c("fbi.3yr", "new.fbi"))[,c(1:3,7:8)] %>% {
         ratio_byfac_new(numerators = "under10knew.fbi", "dummy")[,c(2,5)],
         c(mosaic::sum(under10knew.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$negnew.fbi))
   ) -> table2
+
 
 table2 %>%
   dplyr::rename('Farm Business Income (£ per farm)' = 2,
@@ -393,20 +396,14 @@ table2 %>%
   DT::datatable() %>%
   DT::formatRound(columns=c(2:5), digits=0) 
 
-table2_2 %>%
-  dplyr::rename('Farm Business Income (£ per farm)' = 2,
-                '\u00B1 95% CI FBI' = 3,
-                
-                'Proportion of farms with FBI < £0' = 6,
+table2 %>%
+  dplyr::rename('Proportion of farms with FBI < £0' = 6,
                 '\u00B1 95% CI for FBI < £0' = 7,
                 'Number in sample for FBI < £0' = 8,
                 
                 'Proportion of farms with FBI < £10k' = 12,
                 '\u00B1 95% CI for FBI < £10k' = 13,
                 'Number in sample for FBI < £10k' = 14,
-                
-                'Farm Business Income after payment loss (£ per farm)' = 4,
-                '\u00B1 95% CI FBI after payment loss' = 5,
                 
                 'Proportion of farms with FBI < 0 after payment loss' = 9,
                 '\u00B1 95% CI for FBI < £0 after payment loss' = 10,
@@ -415,12 +412,81 @@ table2_2 %>%
                 'Proportion of farms with FBI < £10k after payment loss' = 15,
                 '\u00B1 95% CI for FBI < £10k after payment loss' = 16,
                 'Number in sample for FBI < £10k after payment loss' = 17) %>%
-  .[c(2, 3, 6, 7, 8, 12, 13, 14, 4, 5, 9, 10, 11, 15, 16, 17)] %>% # re-order columns
+  .[c(1, 6, 7, 8, 12, 13, 14, 9, 10, 11, 15, 16, 17)] %>% # re-order columns
   DT::datatable() %>%
-  DT::formatRound(columns=c(1,2,9,10), digits=0) %>%
-  DT::formatPercentage(columns = c(3, 4, 6, 7, 11, 12, 14, 15))
+  DT::formatPercentage(columns=c(2, 3, 5, 6, 8, 9, 11, 12)) 
 
 #####
+
+# TABLE 2 plot 1
+(table2 %>%
+   {data.frame(fbsfac = rep(.[[1]], 2),
+               group = rep(c("Average FBI", "Average new FBI"), each = length(.[[1]])),
+               y = c(.[[2]], .[[4]]),
+               CI = c(.[[3]], .[[5]]))} %>%
+   mutate(fbsfac = factor(fbsfac, levels = c(levels(fbsloss[[input$fbsfac]]), "All"))) %>%
+   ggplot(aes(x= fbsfac, y = y, fill = group)) +  
+   geom_bar(position = "dodge", stat="identity") +
+   geom_errorbar(aes(ymin = y-CI, ymax = y+CI), position = "dodge", stat="identity") +
+   theme(legend.position="bottom") +
+   scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+   scale_fill_manual(values=colours.helper(c("one", "two"))) +
+   labs(y = "£ per farm", x = "") 
+) %>%
+  ggplotly(tooltip = c("group","y","x")) %>%
+  layout(legend = list(orientation = "h",
+                       y = -0.2, x = 0
+  ))
+
+# TABLE 2 plot 2
+
+(table2 %>%
+    {data.frame(fbsfac = rep(.[[1]], 2),
+                group = rep(c("Average FBI", 
+                              "Average new FBI"), 
+                            each = length(.[[1]])),
+                y = c(.[[6]], .[[9]]),
+                CI = c(.[[7]], .[[10]]))} %>%
+    mutate(fbsfac = factor(fbsfac, levels = c(levels(fbsloss[[input$fbsfac]]), "All"))) %>%
+    ggplot(aes(x= fbsfac, y = y, fill = group)) +  
+    geom_bar(position = "dodge", stat="identity") +
+    geom_errorbar(aes(ymin = y-CI, ymax = y+CI), position = "dodge", stat="identity") +
+    theme(legend.position="bottom") +
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+    scale_y_continuous(labels = scales::percent) +
+    scale_fill_manual(values=colours.helper(c("one", "two"))) +
+    labs(y = "Proportion of farms with FBI < 0", x = "") 
+) %>%
+  ggplotly(tooltip = c("group","y","x")) %>%
+  layout(legend = list(orientation = "h",
+                       y = -0.2, x = 0
+  ))
+
+# TABLE 2 plot 3
+
+(table2 %>%
+    {data.frame(fbsfac = rep(.[[1]], 2),
+                group = rep(c("Average FBI", 
+                              "Average new FBI"), 
+                            each = length(.[[1]])),
+                y = c(.[[12]], .[[15]]),
+                CI = c(.[[13]], .[[16]]))} %>%
+    mutate(fbsfac = factor(fbsfac, levels = c(levels(fbsloss[[input$fbsfac]]), "All"))) %>%
+    ggplot(aes(x= fbsfac, y = y, fill = group)) +  
+    geom_bar(position = "dodge", stat="identity") +
+    geom_errorbar(aes(ymin = y-CI, ymax = y+CI), position = "dodge", stat="identity") +
+    theme(legend.position="bottom") +
+    scale_x_discrete(labels = function(x) str_wrap(x, width = 10)) +
+    scale_y_continuous(labels = scales::percent) +
+    scale_fill_manual(values=colours.helper(c("one", "two"))) +
+    labs(y = "Proportion of farms with FBI < £10k", x = "") 
+) %>%
+  ggplotly(tooltip = c("group","y","x")) %>%
+  layout(legend = list(orientation = "h",
+                       y = -0.2, x = 0
+  ))
+
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #  TABLE 3
 # direct payments as a proportion of FBI
