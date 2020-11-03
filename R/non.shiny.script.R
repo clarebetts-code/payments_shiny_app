@@ -22,14 +22,14 @@ source("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Payments red
 rpa_year <- 2019
 RPA_data <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\20200520 BPS 2019.Rds")
 # 2015/16-2017/18 FBS data
-fbs_3yr <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\fbs_england_3yr_15_17_2.Rds")
+fbs_3yr <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\fbs_england_3yr_16_18.Rds")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Do some processing on the FBS data - calculate 3 year averages
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # function to calculate 3 year average
-av_3year <- function(dat, item, years = 2015:2017){ 
+av_3year <- function(dat, item, years = 2016:2018){ 
   
   years %>%
     substr(start = 3, stop = 4) %>%
@@ -321,7 +321,7 @@ RPA_data %>%
 
 
 # summary of real RPA data
-caption1a <-     paste("Total paid in ",
+caption1a <- paste("Total paid in ",
                        rpa_year,
                        " = £",
                        format(round(sum(rpaloss$NET_PAY_GBP),0),big.mark=","),
@@ -366,13 +366,12 @@ caption2b <-  paste0("RPA Saved: £", format(round(sum(rpaloss$loss),0), big.mar
 #  TABLE 2
 #####
 
-mean_byfac_new(c("fbi.3yr", "new.fbi"))[,c(1:3,7:8)] %>% {
+table2 <- mean_byfac_new(c("fbi.3yr", "new.fbi"))[,c(1:3,7:8)] %>% {
   data.frame(fbsfac = .[[1]],
-         Average_FBI = .[[2]],
-         CI_Average_FBI = .[[4]],
-         Average_new_FBI = .[[3]],
-         CI_Average_new_FBI = .[[5]])
-} %>%
+             Average_FBI = .[[2]],
+             CI_Average_FBI = .[[4]],
+             Average_new_FBI = .[[3]],
+             CI_Average_new_FBI = .[[5]])} %>%
   cbind(., 
         # ratio_byfac can't handle repeated variable names so do seperately for now.
         ratio_byfac_new(numerators = "neg.fbi", "dummy")[,c(2,5)],
@@ -383,7 +382,7 @@ mean_byfac_new(c("fbi.3yr", "new.fbi"))[,c(1:3,7:8)] %>% {
         c(mosaic::sum(lt.10k.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$neg.fbi)),
         ratio_byfac_new(numerators = "under10knew.fbi", "dummy")[,c(2,5)],
         c(mosaic::sum(under10knew.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$negnew.fbi))
-  ) -> table2
+  )
 
 
 table2 %>%
@@ -492,21 +491,19 @@ table2 %>%
 # direct payments as a proportion of FBI
 #####
 
-mean_byfac_new(c("dp.3yr", "newdp"))[,c(1:3,7:8)] %>% 
- {tibble(fbsfac = .[[1]],
-         Average_DP = .[[2]],
-         CI_Average_DP = .[[4]],
-         Average_new_DP = .[[3]],
-         CI_Average_new_DP = .[[5]])
-} %>%
+table3 <- mean_byfac_new(c("dp.3yr", "newdp"))[,c(1:3,7:8)] %>% 
+  {tibble(fbsfac = .[[1]],
+          Average_DP = .[[2]],
+          CI_Average_DP = .[[4]],
+          Average_new_DP = .[[3]],
+          CI_Average_new_DP = .[[5]])} %>%
   bind_cols(., 
-            ratio_byfac_new(numerators = c("dp.3yr", "newdp"), denominators = c("fbi.3yr", "new.fbi")) 
-            %>% {
+            ratio_byfac_new(numerators = c("dp.3yr", "newdp"), denominators = c("fbi.3yr", "new.fbi")) %>% {
               data.frame(DP_prop_FBI = .[[2]],
-                     CI_DP_prop_FBI = .[[7]],
-                     new_DP_prop_new_FBI = .[[3]],
-                     CI_new_DP_prop_FBI = .[[8]])
-              }) -> table3
+                         CI_DP_prop_FBI = .[[7]],
+                         new_DP_prop_new_FBI = .[[3]],
+                         CI_new_DP_prop_FBI = .[[8]])
+              })
 
 # formatted table
 table3 %>%
@@ -579,11 +576,11 @@ table3 %>%
 # RPA data
 #####
 
-data.frame(pay_band = levels(rpaloss$pay_band),
-        expenditure_saved = mosaic::sum(loss ~ pay_band, data = rpaloss)) %>%
-    mutate(expenditure_saved_m = expenditure_saved/1000000,
-           label = paste("£", round(expenditure_saved_m, 1), "m", sep = ""),
-           pay_band = factor(pay_band, levels = levels(rpaloss$pay_band))) -> table4
+table4 <- data.frame(pay_band = levels(rpaloss$pay_band),
+                     expenditure_saved = mosaic::sum(loss ~ pay_band, data = rpaloss)) %>%
+  mutate(expenditure_saved_m = expenditure_saved/1000000,
+         label = paste("£", round(expenditure_saved_m, 1), "m", sep = ""),
+         pay_band = factor(pay_band, levels = levels(rpaloss$pay_band)))
  
 # TABlE 4 Plot
 
@@ -611,9 +608,23 @@ table4 %>%
 #  Table 5
 # RPA data
 #####
-data.frame(payment_reduction_band = factor(levels(rpaloss$pay_band_money_lost)),
-        number_of_businesses = mosaic::sum(dummy ~ pay_band_money_lost, data = rpaloss)) %>%
-  mutate(payment_reduction_band = factor(payment_reduction_band, levels = levels(rpaloss$pay_band_money_lost))) -> table5
+
+# function to automatically supress cells with <5 farms
+# columnName <- "number_of_businesses"
+# x <- table5
+lessthan5_supress <- function(x, columnName){
+  # find numeric columns
+  nums <- unlist(lapply(x, is.numeric))  
+  
+  # isolate those rows where there are less than 5 farms, but more than 0
+  x[x[[columnName]] < 5 & x[[columnName]] > 0, nums] <- "~"
+  
+  return(x)
+}
+
+table5 <- data.frame(payment_reduction_band = factor(levels(rpaloss$pay_band_money_lost)),
+                     number_of_businesses = mosaic::sum(dummy ~ pay_band_money_lost, data = rpaloss)) %>%
+  mutate(payment_reduction_band = factor(payment_reduction_band, levels = levels(rpaloss$pay_band_money_lost))) 
  
 
  (table5 %>%
@@ -628,5 +639,9 @@ data.frame(payment_reduction_band = factor(levels(rpaloss$pay_band_money_lost)),
      vjust = 0
    )) %>%
   ggplotly(tooltip = c("group","y","x")) 
+
+table5 %>%
+  select('Payment reduction band' = 1,
+         'Number of businesses' = 2)
 
 #####

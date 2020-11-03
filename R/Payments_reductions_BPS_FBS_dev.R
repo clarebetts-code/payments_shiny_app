@@ -3,6 +3,7 @@
 # the 'Run App' button above.
 #
 # Built using R version 3.6.2
+#
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 pacman::p_load(dplyr,
@@ -38,7 +39,7 @@ fbs_3yr <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # function to calculate 3 year average
-av_3year <- function(dat, item, years = 2015:2017){ 
+av_3year <- function(dat, item, years = 2016:2018){ 
   
   years %>%
     substr(start = 3, stop = 4) %>%
@@ -317,6 +318,19 @@ server <- function(input, output) {
                     buttons = c('copy', 'csv')),
                   rownames = NULL) %>%
       DT::formatRound(columns=as.numeric(), digits=0)
+  }
+  
+  # function to automatically supress cells with <5 farms
+  # columnName <- "number_of_businesses"
+  # x <- table5
+  lessthan5_supress <- function(x, columnName){
+    # find numeric columns
+    nums <- unlist(lapply(x, is.numeric))  
+    
+    # isolate those rows where there are less than 5 farms, but more than 0
+    x[x[[columnName]] < 5 & x[[columnName]] > 0, nums] <- "~"
+    
+    return(x)
   }
   
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -790,7 +804,7 @@ server <- function(input, output) {
       select('Payment reduction band' = 1,
              'Number of businesses' = 2) %>%
       nice_table() %>%
-      DT::formatRound(columns = 2, digits = 0)
+      DT::formatRound(columns = 2, digits = 0) 
     
   })
   

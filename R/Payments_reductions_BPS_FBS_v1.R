@@ -38,7 +38,7 @@ fbs_3yr <- readRDS("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # function to calculate 3 year average
-av_3year <- function(dat, item, years = 2015:2017){ 
+av_3year <- function(dat, item, years = 2016:2018){ 
   
   years %>%
     substr(start = 3, stop = 4) %>%
@@ -233,9 +233,7 @@ ui <- fluidPage(
                              h3("Data:"),
                              spinner(DT::dataTableOutput("table_3"))
                              #spinner(plotlyOutput("table3_plot"))
-                             ),
- 
-                    tabPanel("Next...")
+                             )
                     
                     
                     )
@@ -517,7 +515,7 @@ server <- function(input, output) {
   })
   
 
-  ## Payments recieved impact - FBS data
+  ## Payments received impact - FBS data
   table3 <- reactive({
 
     mean_byfac_new(c("dp.3yr", "newdp"))[,c(1:3,7:8)] %>% {
