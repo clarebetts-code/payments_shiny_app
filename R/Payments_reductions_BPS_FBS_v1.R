@@ -27,26 +27,15 @@ source("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payme
 # load data
 # 2019 BPS data
 rpa_year <- 2019
-#RPA_data <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\20200520 BPS 2019.Rds")
-RPA_data <- readRDS("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Data\\20200520 BPS 2019.Rds")
+RPA_data <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\20200520 BPS 2019.Rds")
+#RPA_data <- readRDS("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Data\\20200520 BPS 2019.Rds")
 # 2016/17-2018/19 FBS data
-#fbs_3yr <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\fbs_england_3yr_16_18.Rds")
-fbs_3yr <- readRDS("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Data\\fbs_england_3yr_16_18.Rds")
+fbs_3yr <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\fbs_england_3yr_16_18.Rds")
+#fbs_3yr <- readRDS("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Data\\fbs_england_3yr_16_18.Rds")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Do some processing on the FBS data - calculate 3 year averages
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# function to calculate 3 year average
-av_3year <- function(dat, item, years = 2016:2018){ 
-  
-  years %>%
-    substr(start = 3, stop = 4) %>%
-    paste0("X.", ., item) %>%
-    subset(dat, select = .) %>%
-    rowMeans()
-}
-
 
 fbs_3yr %>%
   dplyr::mutate(
@@ -252,17 +241,21 @@ server <- function(input, output) {
   
   # function to simplify the code to calculate the totals
   total_byfac_new <- function(vars, factor = input$fbsfac, design = fbsdesign()){
-    FBSCore::total_byfac(vars, factor, design)
+    FBSCore::total_byfac(vars, factor, design) %>%
+      small_sample_checker()
   }
   
+
   # function to simplify the code to calculate the means
   mean_byfac_new <- function(vars, factor = input$fbsfac, design = fbsdesign()){
-    FBSCore::mean_byfac(vars, factor, design)
+    FBSCore::mean_byfac(vars, factor, design) %>%
+      small_sample_checker()
   }
   
   # function to simplify the code to calculate the means
   ratio_byfac_new <- function(numerators, denominators, factor = input$fbsfac, design = fbsdesign()){
-    FBSCore::ratio_byfac(numerators, denominators, factor, design)
+    FBSCore::ratio_byfac(numerators, denominators, factor, design) %>%
+      small_sample_checker()
   }
   
   
@@ -313,8 +306,7 @@ server <- function(input, output) {
                     #columnDefs = list(list(width = '200px', targets = c(1, 3))),
                     ordering = FALSE,
                     buttons = c('copy', 'csv')),
-                  rownames = NULL) %>%
-      DT::formatRound(columns=as.numeric(), digits=0)
+                  rownames = NULL) 
   }
   
   # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

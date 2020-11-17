@@ -15,7 +15,7 @@ setwd("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app")
 
 
 # read in support functions
-source("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Payments reduction app for git\\R\\Payments_reductions_support_functions.R")
+source("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payments reductions shiny app\\Payments reduction app for git\\R\\Payments_reductions_support_functions.R")
 
 # load data
 # 2019 BPS data
@@ -104,15 +104,19 @@ fbs_3yr %>%
     fbi.min.dp.cc.3yr = fbi.3yr - dp.cc.3yr)  -> fbs_3yr
 
 total_byfac_new <- function(vars, factor = input$fbsfac, design = fbsdesign){
-  FBSCore::total_byfac(vars, factor, design)
+  FBSCore::total_byfac(vars, factor, design) %>%
+    small_sample_checker()
 }
 
+
 mean_byfac_new <- function(vars, factor = input$fbsfac, design = fbsdesign){
-  FBSCore::mean_byfac(vars, factor, design)
+  FBSCore::mean_byfac(vars, factor, design) %>%
+    small_sample_checker()
 }
 
 ratio_byfac_new <- function(numerators, denominators, factor = input$fbsfac, design = fbsdesign){
-  FBSCore::ratio_byfac(numerators, denominators, factor, design)
+  FBSCore::ratio_byfac(numerators, denominators, factor, design) %>%
+    small_sample_checker()
 }
 
 # functions to apply payment reductions  
@@ -129,7 +133,7 @@ input <- list(Level_1 = 30000, prop_1 = 0,
               # Level_10 = 200000, prop_10 = 15,
               # Level_11 = 200000, prop_11 = 15,
               # Level_12 = 1000000, prop_12 = 15,
-              fbsfac = "tenancy")
+              fbsfac = "dp.band")
 
 band_1_reduction <- function(x){
   input$prop_1 * x/100
@@ -301,9 +305,9 @@ RPA_data %>%
                    ordered_result = TRUE),
     # bands for money lost
     pay_band_money_lost = cut(loss, 
-                              breaks = c(-Inf, 0.001, 5000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 75000,  100000, 125000, 150000, 200000, 250000, 300000, Inf), 
-                              labels = c("No loss", "0 to 5k", "5 to 10k", "10 to 15k", "15 to 20k", "20 to 25k", "25 to 30k", "30 to 40k", "40 to 50k", "50 to 75k", "75 to 100k", "100 to 125k", "125 to 150k","150 to 200k", "200k to 250k", "250k to 300k","over 300k"), 
-                              levels =c(1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17),
+                              breaks = c(-Inf, 0.001, 5000, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 75000,  100000, 125000, 150000, Inf), 
+                              labels = c("No loss", "0 to 5k", "5 to 10k", "10 to 15k", "15 to 20k", "20 to 25k", "25 to 30k", "30 to 40k", "40 to 50k", "50 to 75k", "75 to 100k", "100 to 125k", "125 to 150k","over 150"), 
+                              levels =c(1,2,3,4,5,6,7,8,9,10,11,12,13,14),
                               right = TRUE,
                               ordered_result = TRUE),
     # number affected
@@ -318,7 +322,6 @@ RPA_data %>%
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # captions
 #####
-
 
 # summary of real RPA data
 caption1a <- paste("Total paid in ",
@@ -382,8 +385,9 @@ table2 <- mean_byfac_new(c("fbi.3yr", "new.fbi"))[,c(1:3,7:8)] %>% {
         c(mosaic::sum(lt.10k.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$neg.fbi)),
         ratio_byfac_new(numerators = "under10knew.fbi", "dummy")[,c(2,5)],
         c(mosaic::sum(under10knew.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$negnew.fbi))
-  )
-
+  ) %>%
+  # run a small sample checker on the nobs of raw data column
+  small_sample_checker(x = ., nobs = 8)
 
 table2 %>%
   dplyr::rename('Farm Business Income (£ per farm)' = 2,
@@ -598,7 +602,7 @@ table4 <- data.frame(pay_band = levels(rpaloss$pay_band),
   ggplotly(tooltip = c("group","y","x")) 
   
 table4 %>%
-  select('Payment band' = 1,
+  dplyr::select('Payment band' = 1,
          'Total loss of payment' = 2)%>%
   DT::datatable() %>%
   DT::formatRound(columns = 2, digits=0) 
@@ -608,19 +612,6 @@ table4 %>%
 #  Table 5
 # RPA data
 #####
-
-# function to automatically supress cells with <5 farms
-# columnName <- "number_of_businesses"
-# x <- table5
-lessthan5_supress <- function(x, columnName){
-  # find numeric columns
-  nums <- unlist(lapply(x, is.numeric))  
-  
-  # isolate those rows where there are less than 5 farms, but more than 0
-  x[x[[columnName]] < 5 & x[[columnName]] > 0, nums] <- "~"
-  
-  return(x)
-}
 
 table5 <- data.frame(payment_reduction_band = factor(levels(rpaloss$pay_band_money_lost)),
                      number_of_businesses = mosaic::sum(dummy ~ pay_band_money_lost, data = rpaloss)) %>%
