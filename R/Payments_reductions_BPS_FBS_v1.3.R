@@ -5,7 +5,7 @@
 # Built using R version 4.0.2
 # v1.1 - added the sample size checker
 # v1.2 - removed superfluous reactivity
-# v1.3 - corrected error in table2_plot2
+# v1.3 - corrected error in table2_plot2 & where small_sample_checker is called on table2
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 pacman::p_load(dplyr,
@@ -625,9 +625,7 @@ server <- function(input, output) {
             c(mosaic::sum(Loss_fbs()$lt.10k.fbi ~ (Loss_fbs())[,input$fbsfac]), "All" = sum(Loss_fbs()$neg.fbi)),
             ratio_byfac_new(numerators = "under10knew.fbi", "dummy")[,c(2,5)],
             c(mosaic::sum(Loss_fbs()$under10knew.fbi ~ (Loss_fbs())[,input$fbsfac]), "All" = sum(Loss_fbs()$negnew.fbi))
-      ) %>%
-      # run a small sample checker on the nobs of raw data column
-      small_sample_checker(x = ., nobs = 8)
+      ) 
   })
       
   output$table_2a <- DT::renderDataTable({
@@ -648,6 +646,9 @@ server <- function(input, output) {
   output$table_2b <- DT::renderDataTable({
     
     table2() %>%
+      # run a small sample checker to check the number of farms with fbi < 0 & fbi < 10k
+      small_sample_checker(., nobs = 8) %>%
+      small_sample_checker(., nobs = 11) %>%
       dplyr::rename('Proportion of farms with FBI < £0' = 6,
                     '\u00B1 95% CI for FBI < £0' = 7,
                     'Number in sample for FBI < £0' = 8,
@@ -696,6 +697,8 @@ server <- function(input, output) {
   output$table2_plot2 <- renderPlotly({
     
     (table2() %>%
+       # run a small sample checker to check the number of farms with fbi < 0 
+       small_sample_checker(., nobs = 8) %>%
        {data.frame(fbsfac = rep(.[[1]], 2),
                group = rep(c("Average FBI", 
                              "Average new FBI"), 
@@ -719,7 +722,10 @@ server <- function(input, output) {
   })
   
   output$table2_plot3 <- renderPlotly({
+    
     (table2() %>%
+       # run a small sample checker to check the number of farms with fbi < 10k
+       small_sample_checker(., nobs = 11) %>%
        {data.frame(fbsfac = rep(.[[1]], 2),
                    group = rep(c("Average FBI", 
                                  "Average new FBI"), 

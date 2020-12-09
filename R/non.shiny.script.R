@@ -22,7 +22,7 @@ source("K:\\TASPrototype\\FBSmastercopy\\FBS_ADHOC_DATA_REQUESTS\\EU Exit\\Payme
 rpa_year <- 2019
 RPA_data <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\20200520 BPS 2019.Rds")
 # 2015/16-2017/18 FBS data
-fbs_3yr <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\fbs_england_3yr_16_18.Rds")
+fbs_3yr <- readRDS("C:\\Users\\m994810\\Desktop\\Payments reductions shiny app\\Data\\dummy_fbs_england_3yr_16_18.Rds")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Do some processing on the FBS data - calculate 3 year averages
@@ -133,7 +133,7 @@ input <- list(Level_1 = 30000, prop_1 = 0,
               # Level_10 = 200000, prop_10 = 15,
               # Level_11 = 200000, prop_11 = 15,
               # Level_12 = 1000000, prop_12 = 15,
-              fbsfac = "tenancy")
+              fbsfac = "type")
 
 band_1_reduction <- function(x){
   input$prop_1 * x/100
@@ -385,9 +385,7 @@ table2 <- mean_byfac_new(c("fbi.3yr", "new.fbi"))[,c(1:3,7:8)] %>% {
         c(mosaic::sum(lt.10k.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$neg.fbi)),
         ratio_byfac_new(numerators = "under10knew.fbi", "dummy")[,c(2,5)],
         c(mosaic::sum(under10knew.fbi ~ fbsloss[[input$fbsfac]], data = fbsloss), "All" = sum(fbsloss$negnew.fbi))
-  ) %>%
-  # run a small sample checker on the nobs of raw data column
-  small_sample_checker(x = ., nobs = 8)
+  ) 
 
 table2 %>%
   dplyr::rename('Farm Business Income (£ per farm)' = 2,
@@ -400,6 +398,9 @@ table2 %>%
   DT::formatRound(columns=c(2:5), digits=0) 
 
 table2 %>%
+  # run a small sample checker to check the number of farms with fbi < 0 & fbi < 10k
+  small_sample_checker(., nobs = 8) %>%
+  small_sample_checker(., nobs = 11) %>%
   dplyr::rename('Proportion of farms with FBI < £0' = 6,
                 '\u00B1 95% CI for FBI < £0' = 7,
                 'Number in sample for FBI < £0' = 8,
@@ -444,6 +445,8 @@ table2 %>%
 # TABLE 2 plot 2
 
 (table2 %>%
+    # run a small sample checker to check the number of farms with fbi < 0 
+    small_sample_checker(., nobs = 8) %>%
     {data.frame(fbsfac = rep(.[[1]], 2),
                 group = rep(c("Average FBI", 
                               "Average new FBI"), 
@@ -468,6 +471,8 @@ table2 %>%
 # TABLE 2 plot 3
 
 (table2 %>%
+    # run a small sample checker to check the number of farms with fbi < 10k
+    small_sample_checker(., nobs = 11) %>%
     {data.frame(fbsfac = rep(.[[1]], 2),
                 group = rep(c("Average FBI", 
                               "Average new FBI"), 
