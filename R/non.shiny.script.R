@@ -133,7 +133,7 @@ input <- list(Level_1 = 30000, prop_1 = 0,
               # Level_10 = 200000, prop_10 = 15,
               # Level_11 = 200000, prop_11 = 15,
               # Level_12 = 1000000, prop_12 = 15,
-              fbsfac = "dp.band")
+              fbsfac = "tenancy")
 
 band_1_reduction <- function(x){
   input$prop_1 * x/100
