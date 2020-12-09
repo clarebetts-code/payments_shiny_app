@@ -30,3 +30,25 @@ colours.helper <- function(x){
   
   return(cols)
 }
+
+
+# Function to calculate 3 year averages
+av_3year <- function(dat, item, years = 2016:2018){ 
+  
+  years %>%
+    substr(start = 3, stop = 4) %>%
+    paste0("X.", ., item) %>%
+    subset(dat, select = .) %>%
+    rowMeans()
+}
+
+# function to check for small sample sizes
+small_sample_checker <- function(x, nobs = "nobs"){
+  low_sample_rows <- rownames(x)[x[,nobs] < 5]
+  nums <- unlist(lapply(x, is.numeric)) 
+  
+  out <- x
+  out[low_sample_rows, nums] <- 0
+  
+  return(out)
+}
